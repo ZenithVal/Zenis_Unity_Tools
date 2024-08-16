@@ -119,6 +119,27 @@ public class VRCConstraintConversion : MonoBehaviour
             }
         }
     }
+
+    [MenuItem("CONTEXT/AnimationClip/Convert Constraints")]
+    private static void ConvertAnimationClip(MenuCommand command)
+    {
+        var clip = command.context as AnimationClip;
+
+        if (clip == null)
+        {
+            Debug.LogWarning($"Manual VRC Constraint Conversion (Anim): {command.context.name} is not an AnimationClip? How");
+            return;
+        }
+
+        try
+        {
+            AvatarDynamicsSetup.RebindConstraintAnimationClip(clip);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Manual VRC Constraint Conversion (Anim): {ex.Message}");
+        }
+    }
 }
 
 #endif
