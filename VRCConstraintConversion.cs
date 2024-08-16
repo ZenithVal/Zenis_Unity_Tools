@@ -75,11 +75,11 @@ public class VRCConstraintConversion : MonoBehaviour
 
         try
         {
-            AvatarDynamicsSetup.ConvertUnityConstraintsToVrChatConstraints(unityConstraints, null, false);
+            AvatarDynamicsSetup.DoConvertUnityConstraints(unityConstraints, null, false);
         }
         catch (Exception ex)
         {
-            Debug.LogException(ex);
+            Debug.LogError($"Manual VRC Constraint Conversion: {ex.Message}");
         }
         finally
         {
@@ -88,7 +88,7 @@ public class VRCConstraintConversion : MonoBehaviour
     }
 
     [MenuItem("VRChat SDK/Constraints/Convert Constraints in Selected Animation Clips")]
-    public static void ConvertSelectedAnimationClips()
+    private static void ConvertSelectedAnimationClips()
     {
         var targetAnimationClips = new List<AnimationClip>();
 
@@ -106,7 +106,18 @@ public class VRCConstraintConversion : MonoBehaviour
             return;
         }
 
-        AvatarDynamicsSetup.ConvertUnityConstraintTracksToVrChatConstraintTracks(targetAnimationClips);
+
+        foreach (var clip in targetAnimationClips)
+        {
+            try
+            {
+                AvatarDynamicsSetup.RebindConstraintAnimationClip(clip);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Manual VRC Constraint Conversion (Anim): {ex.Message}");
+            }
+        }
     }
 }
 
