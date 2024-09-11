@@ -1,3 +1,4 @@
+//Zenithval 2024
 //Tool for merging duplicate textures.
 //UI Found under Tools/ZenithVal/Texture Consolidator
 
@@ -77,23 +78,28 @@ public class TextureConsolidator : EditorWindow
                 }
             }
 
+            GUILayout.Space(5);
+
             if (GUILayout.Button("Replace Duplicates with Master"))
             {
                 ReplaceDuplicatesWithMaster();
             }
+        }
 
-            if (GUILayout.Button("Delete Duplicate Textures"))
+        GUILayout.Space(5);
+        if (GUILayout.Button("Delete Duplicate Textures"))
+        {
+            if (EditorUtility.DisplayDialog("Confirm Deletion", "Are you sure you want to delete duplicate textures?", "Yes", "No"))
             {
-                if (EditorUtility.DisplayDialog("Confirm Removal", "Are you sure you want to delete duplicate textures?", "Yes", "No"))
-                {
-                    RemoveDuplicates();
-                }
+                DeleteDuplicates();
             }
         }
     }
 
     private void FindDuplicateMaterials()
     {
+        if (!MasterCheck()) return;
+
         textureMaterialsMap.Clear();
         foreach (Texture2D duplicateTexture in duplicateTextures)
         {
@@ -129,11 +135,7 @@ public class TextureConsolidator : EditorWindow
 
     private void ReplaceDuplicatesWithMaster()
     {
-        if (masterTexture == null)
-        {
-            EditorUtility.DisplayDialog("Error", "Master texture is not assigned.", "OK");
-            return;
-        }
+        if (!MasterCheck()) return;
 
         string masterGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(masterTexture));
 
@@ -157,18 +159,37 @@ public class TextureConsolidator : EditorWindow
         AssetDatabase.SaveAssets();
     }
 
-    private void RemoveDuplicates()
+    private void DeleteDuplicates()
     {
-        foreach (var entry in textureMaterialsMap)
+        if (!MasterCheck()) return;
+
+        foreach (Texture2D duplicateTexture in duplicateTextures)
         {
-            if (AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(entry.Key)) != null)
+            if (duplicateTexture != null)
             {
-                AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(entry.Key));
+                string path = AssetDatabase.GetAssetPath(duplicateTexture);
+                AssetDatabase.MoveAssetToTrash(path);
             }
         }
 
-        AssetDatabase.SaveAssets();
-        textureMaterialsMap.Clear();
+        AssetDatabase.Refresh();
+    }
+
+    private bool MasterCheck()
+    {
+        if (masterTexture == null)
+        {
+            EditorUtility.DisplayDialog("Error", "Master texture is not assigned.", "OK");
+            return false;
+        }
+
+        if (duplicateTextures.Contains(masterTexture))
+        {
+            EditorUtility.DisplayDialog("Error", "Master texture cannot be in the list of duplicates.", "OK");
+            return false;
+        }
+
+        return true;
     }
 }
 #endif
