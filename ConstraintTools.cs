@@ -1,13 +1,84 @@
-//Zenithval 2024
+//ZenithVal 2024
+//Some various functions for unity constraints
+
+//Parent Constraint Splitter
+//Splits a parent constraint into a rotation and position constraint
+
+//AssignConstraintSourcesToFakes
 //Very specific niche tool for adding .001 bones as constraint sources to originals
 
-using UnityEngine;
-using UnityEditor;
-using UnityEngine.Animations;
-using VRC.Dynamics;
+#if UNITY_EDITOR
 
-public class AssignConstraintSourcesToFakes : MonoBehaviour
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Animations;
+
+public class ConstraintTools : MonoBehaviour
 {
+    #region Parent Constraint Splitter
+    [MenuItem("CONTEXT/ParentConstraint/Split into Position and Rotation")]
+    public static void SplitParentConstraint(MenuCommand command)
+    {
+        Undo.SetCurrentGroupName($"Split Parent Constraint of {command.context.name}");
+        int undoGroup = Undo.GetCurrentGroup();
+
+        try
+        {
+            ParentConstraint parentConstraint = (ParentConstraint)command.context;
+            GameObject parent = parentConstraint.gameObject;
+
+            if (parent.GetComponent<RotationConstraint>() != null || parent.GetComponent<PositionConstraint>() != null)
+            {
+                Debug.LogWarning("Rotation or Position Constraint already exists on this object");
+                return;
+            }
+
+            Undo.AddComponent<RotationConstraint>(parent);
+            Undo.AddComponent<PositionConstraint>(parent);
+
+            RotationConstraint rotationConstraint = parent.GetComponent<RotationConstraint>();
+            PositionConstraint positionConstraint = parent.GetComponent<PositionConstraint>();
+
+            parentConstraint.constraintActive = false;
+            rotationConstraint.constraintActive = false;
+            positionConstraint.constraintActive = false;
+
+            int sourceCount = parentConstraint.sourceCount;
+
+            for (int i = 0; i < sourceCount; i++)
+            {
+                ConstraintSource source = parentConstraint.GetSource(i);
+
+                if (source.sourceTransform != null)
+                {
+                    rotationConstraint.AddSource(new ConstraintSource {
+                        sourceTransform = source.sourceTransform,
+                        weight = source.weight
+                    });
+
+                    positionConstraint.AddSource(new ConstraintSource {
+                        sourceTransform = source.sourceTransform,
+                        weight = source.weight
+                    });
+                }
+            }
+
+            Undo.DestroyObjectImmediate(parentConstraint);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Failed to split parent constraint: " + e.Message);
+        }
+        finally
+        {
+            Undo.CollapseUndoOperations(undoGroup);
+        }
+    }
+    #endregion
+
+    #region AssignConstraintSourcesToFakes
     [MenuItem("CONTEXT/RotationConstraint/Add .001 Variant as source")]
     [MenuItem("CONTEXT/ParentConstraint/Add .001 Variant as source")]
     [MenuItem("CONTEXT/PositionConstraint/Add .001 Variant as source")]
@@ -110,6 +181,7 @@ public class AssignConstraintSourcesToFakes : MonoBehaviour
         }
         return null;
     }
+    #endregion
 }
 
-
+#endif
