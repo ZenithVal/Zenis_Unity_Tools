@@ -78,6 +78,62 @@ public class ConstraintTools : MonoBehaviour
     }
     #endregion
 
+    #region Convert Position/Rotation constraint to Parent
+    [MenuItem("CONTEXT/RotationConstraint/Convert to Parent Constraint")]
+    [MenuItem("CONTEXT/PositionConstraint/Convert to Parent Constraint")]
+    public static void ConvertToParentConstraint(MenuCommand command)
+    {
+        Undo.SetCurrentGroupName($"Convert {command.context.GetType().Name} to Parent Constraint of {command.context.name}");
+        int undoGroup = Undo.GetCurrentGroup();
+
+        try
+        {
+            ParentConstraint parentConstraint = Undo.AddComponent<ParentConstraint>(((Component)command.context).gameObject);
+
+            int sourceCount = 0;
+            if (command.context is RotationConstraint)
+            {
+                RotationConstraint constraint = (RotationConstraint)command.context;
+                sourceCount = constraint.sourceCount;
+                for (int i = 0; i < sourceCount; i++)
+                {
+                    ConstraintSource source = constraint.GetSource(i);
+                    parentConstraint.AddSource(new ConstraintSource {
+                        sourceTransform = source.sourceTransform,
+                        weight = source.weight
+                    });
+                }
+
+            }
+            else if (command.context is PositionConstraint)
+            {
+                PositionConstraint constraint = (PositionConstraint)command.context;
+                sourceCount = constraint.sourceCount;
+                for (int i = 0; i < sourceCount; i++)
+                {
+                    ConstraintSource source = constraint.GetSource(i);
+                    parentConstraint.AddSource(new ConstraintSource {
+                        sourceTransform = source.sourceTransform,
+                        weight = source.weight
+                    });
+                }
+            }
+
+            Undo.DestroyObjectImmediate((Component)command.context);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Failed to convert constraint to parent constraint: " + e.Message);
+        }
+        finally
+        {
+            Undo.CollapseUndoOperations(undoGroup);
+        }
+    }
+
+    #endregion
+
+
     #region AssignConstraintSourcesToFakes
     [MenuItem("CONTEXT/RotationConstraint/Add .001 Variant as source")]
     [MenuItem("CONTEXT/ParentConstraint/Add .001 Variant as source")]
