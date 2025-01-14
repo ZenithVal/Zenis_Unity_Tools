@@ -35,15 +35,15 @@ public class ConstraintTools : MonoBehaviour
                 return;
             }
 
-            Undo.AddComponent<RotationConstraint>(parent);
             Undo.AddComponent<PositionConstraint>(parent);
+            Undo.AddComponent<RotationConstraint>(parent);
 
-            RotationConstraint rotationConstraint = parent.GetComponent<RotationConstraint>();
             PositionConstraint positionConstraint = parent.GetComponent<PositionConstraint>();
-
+            RotationConstraint rotationConstraint = parent.GetComponent<RotationConstraint>();
+            
             parentConstraint.constraintActive = false;
-            rotationConstraint.constraintActive = false;
             positionConstraint.constraintActive = false;
+            rotationConstraint.constraintActive = false;
 
             int sourceCount = parentConstraint.sourceCount;
 
